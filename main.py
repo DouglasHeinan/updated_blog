@@ -62,13 +62,31 @@ def contact():
     return render_template("contact.html")
 
 
-@app.route("/edit")
-def edit_post():
-    pass
+@app.route("/edit-post/<int:post_id>", methods=["GET", "POST"])
+def edit_post(post_id):
+    post = BlogPost.query.get(post_id)
+    h_one = "Edit Post"
+    edit_form = CreatePostForm(
+        title=post.title,
+        subtitle=post.subtitle,
+        img_url=post.img_url,
+        author=post.author,
+        body=post.body
+    )
+    if edit_form.validate_on_submit():
+        post.title = edit_form.title.data
+        post.subtitle = edit_form.subtitle.data
+        post.img_url = edit_form.img_url.data
+        post.author = edit_form.author.data
+        post.body = edit_form.body.data
+        db.session.commit()
+        return redirect(url_for("show_post", post_id=post.id))
+    return render_template("make-post.html", post=post, h_one=h_one, form=edit_form)
 
 
 @app.route("/new-post", methods=["GET", "POST"])
 def new_post():
+    h_one = "New Post"
     today = date.today()
     form = CreatePostForm()
     if form.validate_on_submit():
@@ -83,9 +101,16 @@ def new_post():
         db.session.add(new_blog_post)
         db.session.commit()
         return redirect(url_for("get_all_posts"))
-    return render_template("make-post.html", form=form)
+    return render_template("make-post.html", form=form, h_one=h_one)
+
+
+@app.route("/delete/<post_id>")
+def delete_post(post_id):
+    post = BlogPost.query.get(post_id)
+    db.session.delete(post)
+    db.session.commit()
+    return redirect(url_for("get_all_posts"))
 
 
 if __name__ == "__main__":
     app.run()
-    # app.run(host='0.0.0.0', port=5000)
